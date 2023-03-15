@@ -1,0 +1,54 @@
+import pandas as pd
+import numpy as np
+import statsmodels.api as sm
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+from matplotlib import pyplot as plt
+import statsmodels.formula.api as smf
+
+df = pd.read_csv('revised_wine_data.csv', index_col=0, parse_dates=True)
+df.head()
+
+formula = 'quality ~ sulphates+pH+style'
+model = smf.glm(formula = formula, data=df, family=sm.families.Binomial())
+result = model.fit()
+print(result.summary())
+
+print("Coefficeients")
+print(result.params)
+print()
+print("p-Values")
+print(result.pvalues)
+print()
+print("Dependent variables")
+print(result.model.endog_names)
+
+N=11
+x  = df.iloc[: , :N]
+x = StandardScaler().fit_transform(x)
+
+pca = PCA(n_components=2)
+principalComponents = pca.fit_transform(x)
+principalDf = pd.DataFrame(data = principalComponents, columns = ['principal component 1', 'principal component 2'])
+df = df.reset_index()
+finalDf = pd.concat([principalDf, df[['quality']]], axis = 1)
+
+print(finalDf)
+
+fig = plt.figure(figsize = (8,8))
+ax = fig.add_subplot(1,1,1) 
+ax.set_xlabel('Principal Component 1', fontsize = 15)
+ax.set_ylabel('Principal Component 2', fontsize = 15)
+ax.set_title('2 component PCA', fontsize = 20)
+targets = ['quality']
+colors = ['r', 'g', 'b']
+for target, color in zip(targets,colors):
+    indicesToKeep = finalDf['quality'] == target
+    ax.scatter(finalDf.loc[indicesToKeep, 'principal component 1']
+               , finalDf.loc[indicesToKeep, 'principal component 2']
+               , c = color
+               , s = 50)
+ax.legend(targets)
+ax.grid()
+
+pca.explained_variance_ratio_
